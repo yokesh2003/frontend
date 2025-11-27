@@ -13,6 +13,7 @@ const Library: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [playingAudio, setPlayingAudio] = useState<LibraryType | null>(null);
   const [deletingId, setDeletingId] = useState<number | null>(null);
+  const [confirmDeleteItem, setConfirmDeleteItem] = useState<LibraryType | null>(null);
 
   useEffect(() => {
     if (user) {
@@ -43,22 +44,25 @@ const Library: React.FC = () => {
       console.error('No audioId found for library item', library);
       return;
     }
-    const confirmDelete = window.confirm(
-      `Remove "${library.audiobook?.title}" from your library?`
-    );
-    if (!confirmDelete) {
-      return;
-    }
+    // Open styled confirmation modal
+    setConfirmDeleteItem(library);
+  };
+
+  const confirmDelete = async () => {
+    if (!user || !confirmDeleteItem) return;
+    const audioId = confirmDeleteItem.audioId || confirmDeleteItem.audiobook?.audioId;
+    if (!audioId) return;
     try {
-      setDeletingId(library.libraryId);
+      setDeletingId(confirmDeleteItem.libraryId);
       await libraryService.removeFromLibrary(user.customerId, audioId);
       setLibraries((prev) =>
-        prev.filter((item) => item.libraryId !== library.libraryId)
+        prev.filter((item) => item.libraryId !== confirmDeleteItem.libraryId)
       );
     } catch (error) {
       console.error('Error removing from library:', error);
     } finally {
       setDeletingId(null);
+      setConfirmDeleteItem(null);
     }
   };
 
@@ -87,7 +91,7 @@ const Library: React.FC = () => {
   return (
     <div className="container mt-4">
       <h2 className="mb-4">My Library</h2>
-      {libraries.map((library) => (
+        {libraries.map((library) => (
         <Card key={library.libraryId} className="mb-3 shadow-sm">
           <Row className="g-0 align-items-center">
             <Col md={3}>
@@ -137,8 +141,8 @@ const Library: React.FC = () => {
               </Button>
             </Col>
           </Row>
-        </Card>
-      ))}
+            </Card>
+        ))}
 
       {playingAudio && playingAudio.audiobook?.audioFile && (
         <Modal show={true} onHide={() => setPlayingAudio(null)} size="lg">
@@ -152,6 +156,31 @@ const Library: React.FC = () => {
               lastPosition={playingAudio.lastPosition}
             />
           </Modal.Body>
+        </Modal>
+      )}
+
+      {/* Delete confirmation modal */}
+      {confirmDeleteItem && (
+        <Modal show={true} onHide={() => setConfirmDeleteItem(null)} centered>
+          <Modal.Header closeButton>
+            <Modal.Title>Remove from Library</Modal.Title>
+          </Modal.Header>
+          <Modal.Body>
+            Are you sure you want to remove "
+            {confirmDeleteItem.audiobook?.title || 'this audiobook'}" from your library?
+          </Modal.Body>
+          <Modal.Footer>
+            <Button variant="secondary" onClick={() => setConfirmDeleteItem(null)}>
+              Cancel
+            </Button>
+            <Button
+              variant="danger"
+              onClick={confirmDelete}
+              disabled={deletingId === confirmDeleteItem.libraryId}
+            >
+              {deletingId === confirmDeleteItem.libraryId ? 'Removing...' : 'Remove'}
+            </Button>
+          </Modal.Footer>
         </Modal>
       )}
     </div >
