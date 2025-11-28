@@ -24,7 +24,7 @@ function App() {
 
   return (
     <AuthProvider>
-      <CartProvider>
+      
         <Router>
           <Navbar />
           <Routes>
@@ -41,7 +41,7 @@ function App() {
             <Route path="/profile" element={requireLogin(<Profile />)} />
           </Routes>
         </Router>
-      </CartProvider>
+      
     </AuthProvider>
   );
 }
