@@ -13,35 +13,43 @@ import Home from './components/home/Home';
 import Library from './components/library/Library';
 import Payment from './components/payment/Payment';
 import Profile from './components/profile/Profile';
-import { AuthProvider } from './context/AuthContext';
+import { AuthProvider, useAuth } from './context/AuthContext';
 import { CartProvider } from './context/CartContext';
 
-function App() {
-  const isLoggedIn = !!localStorage.getItem('user');
+// Protected Route Component that uses AuthContext
+const ProtectedRoute: React.FC<{ children: React.ReactElement }> = ({ children }) => {
+  const { isAuthenticated } = useAuth();
+  return isAuthenticated ? children : <Navigate to="/login" />;
+};
 
-  const requireLogin = (page: React.ReactElement) =>
-    isLoggedIn ? page : <Navigate to="/login" />;
+function AppRoutes() {
+  return (
+    <Routes>
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/" element={<Home />} />
+      <Route path="/audiobook/:id" element={<AudiobookDetail />} />
+
+      <Route path="/change-password" element={<ProtectedRoute><ChangePassword /></ProtectedRoute>} />
+      <Route path="/cart" element={<ProtectedRoute><Cart /></ProtectedRoute>} />
+      <Route path="/payment" element={<ProtectedRoute><Payment /></ProtectedRoute>} />
+      <Route path="/library" element={<ProtectedRoute><Library /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+    </Routes>
+  );
+}
+
+function App() {
 
   return (
     <AuthProvider>
-      
+      <CartProvider>
         <Router>
           <Navbar />
-          <Routes>
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/forgot-password" element={<ForgotPassword />} />
-            <Route path="/" element={<Home />} />
-            <Route path="/audiobook/:id" element={<AudiobookDetail />} />
-
-            <Route path="/change-password" element={requireLogin(<ChangePassword />)} />
-            <Route path="/cart" element={requireLogin(<Cart />)} />
-            <Route path="/payment" element={requireLogin(<Payment />)} />
-            <Route path="/library" element={requireLogin(<Library />)} />
-            <Route path="/profile" element={requireLogin(<Profile />)} />
-          </Routes>
+          <AppRoutes />
         </Router>
-      
+      </CartProvider>
     </AuthProvider>
   );
 }
